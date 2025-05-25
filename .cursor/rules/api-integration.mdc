@@ -1,5 +1,5 @@
 ---
-description:
+description: Patterns to access raindrop and telegram APIs
 globs:
 alwaysApply: false
 ---
@@ -107,27 +107,31 @@ try {
 - **Type assertions**: Cast responses to proper TypeScript interfaces
 - **Timeout handling**: Cloudflare Workers have 10-second execution limit
 
-## CLIENT CLASS STRUCTURE
+## CLIENT FACTORY STRUCTURE
 
 ### Raindrop Client ([raindrop.ts](mdc:src/raindrop.ts))
 ```typescript
-export class RaindropClient {
-  async getRandomArticle(collectionId: string, token: string): Promise<RaindropItem> {
-    // Implementation
-  }
+export function createRaindropClient(token: string): RaindropClient {
+  return {
+    async getRandomArticle(collectionId: string): Promise<RaindropItem> {
+      // Implementation with token in closure
+    }
+  };
 }
 ```
 
 ### Telegram Client ([telegram.ts](mdc:src/telegram.ts))
 ```typescript
-export class TelegramClient {
-  async sendMessage(chatId: string, message: string, token: string): Promise<void> {
-    // Implementation
-  }
+export function createTelegramClient(token: string): TelegramClient {
+  return {
+    async sendMessage(chatId: string, message: string): Promise<void> {
+      // Implementation with token in closure
+    },
 
-  async sendErrorMessage(chatId: string, error: string, token: string): Promise<void> {
-    // Implementation
-  }
+    async sendErrorMessage(chatId: string, error: string): Promise<void> {
+      // Implementation with token in closure
+    }
+  };
 }
 ```
 
