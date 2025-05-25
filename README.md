@@ -23,7 +23,7 @@ A serverless TypeScript application that runs daily on Cloudflare Workers, fetch
 ```bash
 git clone <your-repo-url>
 cd random-article
-npm install
+pnpm install
 ```
 
 ### 2. Configure Environment Variables
@@ -79,14 +79,14 @@ npx wrangler secret put TELEGRAM_BOT_TOKEN
 npx wrangler secret put RAINDROP_TOKEN
 
 # Deploy the worker
-npm run deploy
+pnpm run deploy
 ```
 
 ### 5. Test Locally
 
 ```bash
 # Run development server with scheduled event testing
-npm run dev
+pnpm run dev
 
 # In another terminal, trigger the scheduled event
 curl "http://localhost:8787/__scheduled?cron=*+*+*+*+*"
@@ -136,9 +136,9 @@ src/
 
 ### Available Scripts
 
-- `npm run dev` - Start development server
-- `npm run deploy` - Deploy to Cloudflare Workers
-- `npm run cf-typegen` - Generate TypeScript types from Wrangler config
+- `pnpm run dev` - Start development server
+- `pnpm run deploy` - Deploy to Cloudflare Workers
+- `pnpm run cf-typegen` - Generate TypeScript types from Wrangler config
 
 ### Environment Variables
 
