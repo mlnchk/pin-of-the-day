@@ -1,0 +1,172 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# Raindrop.io to Telegram Daily Article Bot
+
+## PROJECT OVERVIEW
+You are building a serverless TypeScript application that runs daily on Cloudflare Workers. The bot fetches a random article from a Raindrop.io collection and sends it via Telegram.
+
+## CORE REQUIREMENTS
+- **Platform**: Cloudflare Workers (free tier)
+- **Language**: TypeScript (strict mode)
+- **Scheduling**: Daily execution via Cloudflare Cron Triggers
+- **APIs**: Raindrop.io API, Telegram Bot API
+- **Architecture**: Serverless, stateless, minimalistic
+
+## PROJECT STRUCTURE
+```
+src/
+├── index.ts          # Main worker entry point with scheduled handler
+├── raindrop.ts       # Raindrop.io API client
+├── telegram.ts       # Telegram Bot API client
+├── types.ts          # TypeScript interfaces and types
+└── utils.ts          # Utility functions
+wrangler.toml         # Cloudflare Workers configuration
+package.json          # Dependencies and scripts
+```
+
+## ENVIRONMENT VARIABLES
+- `RAINDROP_TOKEN` (secret) - Raindrop.io API token
+- `TELEGRAM_BOT_TOKEN` (secret) - Telegram bot token
+- `RAINDROP_COLLECTION_ID` (var) - Target collection ID
+- `TELEGRAM_CHAT_ID` (var) - Target chat ID
+
+## IMPLEMENTATION GUIDELINES
+
+### 1. Main Entry Point ([index.ts](mdc:src/index.ts))
+- Export default object with `scheduled` handler
+- Use `ScheduledEvent`, `Env`, `ExecutionContext` types
+- Implement error handling with try-catch
+- Add logging for debugging
+- Keep logic minimal - delegate to service classes
+
+### 2. Raindrop.io Client ([raindrop.ts](mdc:src/raindrop.ts))
+- Create `RaindropClient` class
+- Implement `getRandomArticle(collectionId: string, token: string)` method
+- API endpoint: `https://api.raindrop.io/rest/v1/raindrops/{collectionId}`
+- Use Bearer token authentication
+- NO pagination handling (max 30 articles)
+- Select random article from results
+- Return structured article data
+
+### 3. Telegram Client ([telegram.ts](mdc:src/telegram.ts))
+- Create `TelegramClient` class
+- Implement `sendMessage(chatId: string, message: string, token: string)` method
+- Implement `sendErrorMessage(chatId: string, error: string, token: string)` method
+- API endpoint: `https://api.telegram.org/bot{token}/sendMessage`
+- Use POST method with JSON payload
+- Format message with Markdown support
+- Include article title, excerpt, link, and domain
+
+### 4. Types ([types.ts](mdc:src/types.ts))
+- Define `RaindropItem` interface with: _id, title, excerpt, link, domain, created
+- Define `RaindropResponse` interface for API response
+- Define `TelegramMessage` interface for message payloads
+- Use auto-generated `Env` interface from `wrangler types`
+- Use readonly properties where appropriate
+
+### 5. Utilities ([utils.ts](mdc:src/utils.ts))
+- Message formatting utilities
+- Markdown escaping functions
+- Date formatting functions
+- Random selection utilities
+- Error message formatting for Telegram notifications
+
+### 6. Error Handling
+- Wrap all async operations in try-catch
+- Send error notifications to Telegram if Raindrop API fails
+- Provide meaningful error messages
+- Use console.error for logging
+- Don't crash on single API failure
+
+## CODING STANDARDS
+
+### TypeScript
+- Use strict mode
+- Prefer interfaces over types
+- Use async/await over Promises
+- Add proper return types to all functions
+- Use optional chaining and nullish coalescing
+- No `any` types - use proper typing
+- Use auto-generated types from `wrangler types`
+
+### HTTP Requests
+- Use Cloudflare's built-in `fetch()` only
+- No external HTTP libraries
+- Set proper headers (Authorization, Content-Type)
+- Handle HTTP error status codes
+- Use JSON for request/response bodies
+
+### Message Formatting
+- Use Telegram Markdown formatting
+- Include emojis for better UX
+- Format: `📚 *Article Title*\n\n_Excerpt..._\n\n🔗 [Read More](link)`
+- Escape special Markdown characters if needed
+- Keep messages concise but informative
+
+### Performance
+- Minimize API calls
+- Use efficient random selection
+- Avoid unnecessary data processing
+- Keep execution time under 10 seconds
+- No persistent state or databases
+
+## API DETAILS
+
+### Raindrop.io API
+- Authentication: `Authorization: Bearer {token}`
+- Get collection items: `GET /rest/v1/raindrops/{collectionId}`
+- Response includes items array with article data
+- Handle rate limiting (429 status)
+
+### Telegram Bot API
+- Send message: `POST /bot{token}/sendMessage`
+- Payload: `{"chat_id": "...", "text": "...", "parse_mode": "Markdown"}`
+- Handle message too long error (split if needed)
+
+### Message Format Template
+```
+📚 *{title}*
+
+_{excerpt}_
+
+🌐 {domain}
+🔗 {link_to_article}
+
+📅 Shared on {date}
+```
+
+### Error Message Template
+```
+🚨 *Daily Article Bot Error*
+
+❌ Failed to fetch article from Raindrop.io
+
+*Error Details:*
+{error_description}
+
+*Time:* {timestamp}
+
+Please check your Raindrop.io collection and API token.
+```
+
+## DO NOT INCLUDE
+- External dependencies beyond TypeScript types
+- Database or storage solutions
+- Complex state management
+- Authentication beyond API tokens
+- File system operations
+- Multiple environments beyond what's configured
+- Pagination handling (collection has max 30 articles)
+
+## DEPLOYMENT NOTES
+- Code will be deployed via `wrangler deploy`
+- Runs on Cloudflare Workers runtime
+- Cron trigger configured in [wrangler.jsonc](mdc:wrangler.jsonc)
+- Secrets managed via Wrangler CLI
+- No build process needed beyond TypeScript compilation
+- Use `wrangler types` to generate environment variable types
+
+Start with implementing the types and basic structure, then move to API clients, and finally the main handler.

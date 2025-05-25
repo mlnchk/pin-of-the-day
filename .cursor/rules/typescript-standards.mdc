@@ -1,0 +1,91 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# TypeScript Standards for Cloudflare Workers
+
+## STRICT TYPESCRIPT REQUIREMENTS
+
+### Type Safety
+- **Strict mode enabled** - All TypeScript strict checks must pass
+- **No `any` types** - Use proper typing for all variables and functions
+- **Explicit return types** - All functions must have explicit return type annotations
+- **Readonly properties** - Use `readonly` for interface properties that shouldn't change
+
+### Environment Variables
+- **Auto-generated types only** - Use `wrangler types` command to generate `Env` interface
+- **Never manually type `Env`** - Always rely on auto-generated types from [worker-configuration.d.ts](mdc:worker-configuration.d.ts)
+- **Type regeneration** - Run `npm run cf-typegen` after changing [wrangler.jsonc](mdc:wrangler.jsonc)
+
+### Interface Design
+- **Prefer interfaces over types** - Use `interface` for object shapes
+- **Descriptive naming** - Interface names should clearly indicate their purpose
+- **Composition over inheritance** - Use interface composition when needed
+
+### Async/Await Patterns
+- **Use async/await** - Prefer async/await over Promise chains
+- **Proper error handling** - Wrap async operations in try-catch blocks
+- **Return type annotations** - Always specify return types for async functions
+
+### Modern TypeScript Features
+- **Optional chaining** - Use `?.` for safe property access
+- **Nullish coalescing** - Use `??` for default values
+- **Template literals** - Use template strings for string composition
+- **Destructuring** - Use object/array destructuring where appropriate
+
+## EXAMPLES
+
+### Good Interface Design
+```typescript
+export interface RaindropItem {
+  readonly _id: number;
+  readonly title: string;
+  readonly excerpt: string;
+  readonly link: string;
+  readonly domain: string;
+  readonly created: string;
+}
+```
+
+### Proper Function Typing
+```typescript
+export async function getRandomArticle(
+  collectionId: string,
+  token: string
+): Promise<RaindropItem> {
+  // Implementation
+}
+```
+
+### Error Handling Pattern
+```typescript
+try {
+  const article = await raindropClient.getRandomArticle(collectionId, token);
+  await telegramClient.sendMessage(chatId, message, botToken);
+} catch (error) {
+  const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+  await telegramClient.sendErrorMessage(chatId, errorMessage, botToken);
+}
+```
+
+### Environment Variable Usage
+```typescript
+// ✅ Good - Uses auto-generated Env type
+export default {
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    const { RAINDROP_TOKEN, TELEGRAM_BOT_TOKEN } = env;
+  }
+}
+
+// ❌ Bad - Manual Env typing
+interface ManualEnv {
+  RAINDROP_TOKEN: string;
+  // Don't do this!
+}
+```
+
+## COMPILATION CHECKS
+- Run `npx tsc --noEmit` to verify type safety
+- All code must compile without TypeScript errors
+- Use `wrangler types` to keep environment types in sync

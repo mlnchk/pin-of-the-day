@@ -1,0 +1,137 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# API Integration Patterns
+
+## RAINDROP.IO API INTEGRATION
+
+### Authentication
+- **Bearer Token**: Use `Authorization: Bearer {token}` header
+- **Token Source**: Get from `env.RAINDROP_TOKEN` (auto-generated type)
+- **Security**: Never log or expose the token
+
+### API Endpoint
+- **Base URL**: `https://api.raindrop.io/rest/v1`
+- **Collection Endpoint**: `/raindrops/{collectionId}`
+- **Method**: GET request only
+- **No Pagination**: Collection limited to 30 articles max
+
+### Request Pattern
+```typescript
+const response = await fetch(`https://api.raindrop.io/rest/v1/raindrops/${collectionId}`, {
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+});
+```
+
+### Response Handling
+- **Success**: Status 200 with JSON response
+- **Rate Limiting**: Handle 429 status codes
+- **Error States**: 401 (unauthorized), 404 (not found), 500 (server error)
+- **Response Type**: Use [RaindropResponse](mdc:src/types.ts) interface
+
+### Random Selection
+- Get all items from single API call
+- Use [getRandomItem](mdc:src/utils.ts) utility function
+- No need for pagination logic
+
+## TELEGRAM BOT API INTEGRATION
+
+### Authentication
+- **Bot Token**: Use in URL path `/bot{token}/sendMessage`
+- **Token Source**: Get from `env.TELEGRAM_BOT_TOKEN`
+- **Security**: Never log or expose the token
+
+### API Endpoint
+- **Base URL**: `https://api.telegram.org`
+- **Send Message**: `/bot{token}/sendMessage`
+- **Method**: POST request with JSON payload
+
+### Message Sending Pattern
+```typescript
+const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    chat_id: chatId,
+    text: message,
+    parse_mode: 'Markdown'
+  })
+});
+```
+
+### Message Formatting
+- **Parse Mode**: Always use 'Markdown'
+- **Escaping**: Use [escapeMarkdown](mdc:src/utils.ts) for special characters
+- **Templates**: Use [formatArticleMessage](mdc:src/utils.ts) and [formatErrorMessage](mdc:src/utils.ts)
+- **Length Limits**: Telegram messages max 4096 characters
+
+### Error Notifications
+- **Send errors to Telegram**: If Raindrop API fails, notify user via Telegram
+- **Error Format**: Use structured error message template
+- **Fallback**: Always attempt to send error notification
+
+## HTTP CLIENT REQUIREMENTS
+
+### Use Built-in Fetch Only
+- **No external libraries**: Use Cloudflare Workers built-in `fetch()`
+- **No axios, node-fetch, etc.**: Stick to Web API standards
+- **Async/await**: Always use async/await pattern
+
+### Error Handling Pattern
+```typescript
+try {
+  const response = await fetch(url, options);
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  return data;
+} catch (error) {
+  console.error('API Error:', error);
+  throw error;
+}
+```
+
+### Response Validation
+- **Check status codes**: Always verify `response.ok`
+- **Parse JSON safely**: Handle JSON parsing errors
+- **Type assertions**: Cast responses to proper TypeScript interfaces
+- **Timeout handling**: Cloudflare Workers have 10-second execution limit
+
+## CLIENT CLASS STRUCTURE
+
+### Raindrop Client ([raindrop.ts](mdc:src/raindrop.ts))
+```typescript
+export class RaindropClient {
+  async getRandomArticle(collectionId: string, token: string): Promise<RaindropItem> {
+    // Implementation
+  }
+}
+```
+
+### Telegram Client ([telegram.ts](mdc:src/telegram.ts))
+```typescript
+export class TelegramClient {
+  async sendMessage(chatId: string, message: string, token: string): Promise<void> {
+    // Implementation
+  }
+
+  async sendErrorMessage(chatId: string, error: string, token: string): Promise<void> {
+    // Implementation
+  }
+}
+```
+
+## ENVIRONMENT VARIABLE ACCESS
+- **Type Safety**: Use auto-generated `Env` interface
+- **Destructuring**: Extract needed variables from `env` parameter
+- **Validation**: Assume environment variables are properly set in production
