@@ -1,4 +1,4 @@
-import type { RaindropItem } from './types';
+import type { PinterestItem } from './types';
 
 /**
  * Escapes special Markdown characters for Telegram
@@ -31,22 +31,15 @@ export function getRandomItem<T>(items: T[]): T {
 }
 
 /**
- * Formats a Raindrop article into a Telegram message
+ * Formats a Pinterest pin into a Telegram message
  */
-export function formatArticleMessage(article: RaindropItem): string {
-	const title = escapeMarkdown(article.title);
-	const excerpt = article.excerpt ? escapeMarkdown(article.excerpt) : 'No excerpt available';
-	const domain = escapeMarkdown(article.domain);
-	const formattedDate = formatDate(article.created);
+export function formatArticleMessage(pin: PinterestItem): string {
+	// const title = escapeMarkdown(pin.title);
+	// const description = pin.description ? escapeMarkdown(pin.description) : 'No description available';
+	// const boardName = escapeMarkdown(pin.board_name);
+	// const formattedDate = formatDate(pin.created_at);
 
-	return `📚 *${title}*
-
-_${excerpt}_
-
-🌐 ${domain}
-🔗 [Read More](${article.link})
-
-📅 Shared on ${formattedDate}`;
+	return `🖼️ [Image](${pin.image_url})\n🔗 [View Pin](${pin.link})`;
 }
 
 /**
@@ -56,16 +49,16 @@ export function formatErrorMessage(error: string): string {
 	const timestamp = new Date().toISOString();
 	const escapedError = escapeMarkdown(error);
 
-	return `🚨 *Daily Article Bot Error*
+	return `🚨 *Daily Pin Bot Error*
 
-❌ Failed to fetch article from Raindrop\\.io
+❌ Failed to fetch pin from Pinterest
 
 *Error Details:*
 ${escapedError}
 
 *Time:* ${timestamp}
 
-Please check your Raindrop\\.io collection and API token\\.`;
+Please check your Pinterest board and API token\\.`;
 }
 
 /**

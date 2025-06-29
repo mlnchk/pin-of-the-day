@@ -4,7 +4,7 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "random-article",
+	"name": "random-pin",
 	"main": "src/index.ts",
 	"compatibility_date": "2025-05-25",
 	"observability": {
@@ -32,11 +32,11 @@
 	 * Environment Variables
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
 	 */
-	"vars": {
-		"RAINDROP_COLLECTION_ID": "51232036" // Next
-	}
+	"vars": {}
 	/**
-	 * Note: Use secrets to store sensitive data.
+	 * Note: In production, move PINTEREST_TOKEN and TELEGRAM_BOT_TOKEN to secrets:
+	 * wrangler secret put PINTEREST_TOKEN
+	 * wrangler secret put TELEGRAM_BOT_TOKEN
 	 * https://developers.cloudflare.com/workers/configuration/secrets/
 	 */
 

@@ -1,11 +1,11 @@
-# Raindrop.io to Telegram Daily Article Bot
+# Pinterest to Telegram Daily Pin Bot
 
-A serverless TypeScript application that runs daily on Cloudflare Workers, fetching a random article from a Raindrop.io collection and sending it via Telegram.
+A serverless TypeScript application that runs daily on Cloudflare Workers, fetching a random pin from a Pinterest board and sending it via Telegram.
 
 ## Features
 
 - 🔄 **Daily automated execution** via Cloudflare Cron Triggers
-- 📚 **Random article selection** from your Raindrop.io collection
+- 📌 **Random pin selection** from your Pinterest board
 - 📱 **Telegram notifications** with formatted messages
 - 🚨 **Error handling** with Telegram error notifications
 - ☁️ **Serverless** - runs on Cloudflare Workers free tier
@@ -15,14 +15,14 @@ A serverless TypeScript application that runs daily on Cloudflare Workers, fetch
 ### Prerequisites
 
 - [Cloudflare account](https://cloudflare.com) (free tier works)
-- [Raindrop.io account](https://raindrop.io) with API access
+- [Pinterest Developer account](https://developers.pinterest.com) with API access
 - [Telegram bot](https://core.telegram.org/bots#creating-a-new-bot) created via @BotFather
 
 ### 1. Clone and Install
 
 ```bash
 git clone <your-repo-url>
-cd random-article
+cd random-pin
 pnpm install
 ```
 
@@ -39,12 +39,10 @@ Fill in your actual values in `.dev.vars`:
 ```bash
 TELEGRAM_BOT_TOKEN="your_telegram_bot_token"
 TELEGRAM_CHAT_ID="your_chat_id"
-RAINDROP_TOKEN="your_raindrop_api_token"
+PINTEREST_COOKIE="your_pinterest_cookie"
 ```
 
 ### 3. Getting Required Tokens
-
-**Note:** This project is configured to use a specific Raindrop.io collection (ID: 51232036). If you want to use your own collection, update the `RAINDROP_COLLECTION_ID` in `wrangler.jsonc`.
 
 #### Telegram Bot Token
 
@@ -57,26 +55,28 @@ RAINDROP_TOKEN="your_raindrop_api_token"
 1. Message [@userinfobot](https://t.me/userinfobot) on Telegram
 2. Copy your chat ID from the response
 
-#### Raindrop.io API Token
+#### Pinterest Cookie
 
-1. Go to [Raindrop.io App Settings](https://app.raindrop.io/settings/integrations)
-2. Create a new app or use existing
-3. Create and copy the "Test token"
+This project uses an undocumented Pinterest API that requires a session cookie for authentication.
 
-#### Raindrop.io Collection ID
+1.  Log in to your Pinterest account in your web browser.
+2.  Open your browser's developer tools (usually by pressing `F12` or `Cmd+Option+I`).
+3.  Go to the "Network" or "Storage" tab.
+4.  Find the cookies for `pinterest.com`.
+5.  Copy the entire cookie string (it will be long). The value of the `_pinterest_sess` cookie is what you're looking for, but the entire `Cookie` request header value is often needed. It might start with `_pinterest_sess=...`.
 
-1. Go to your collection in Raindrop.io
-2. The collection ID is in the URL: `https://app.raindrop.io/my/{collection_id}`
+**Note**: This cookie is sensitive and provides access to your account. Keep it secret. It may also expire, requiring you to update it periodically.
 
 ### 4. Deploy to Cloudflare Workers
 
+First, log in to your Cloudflare account:
+
 ```bash
-# Login to Cloudflare (first time only)
 npx wrangler login
 
 # Set up secrets (production environment)
 npx wrangler secret put TELEGRAM_BOT_TOKEN
-npx wrangler secret put RAINDROP_TOKEN
+npx wrangler secret put PINTEREST_COOKIE
 
 # Deploy the worker
 pnpm run deploy
@@ -108,17 +108,18 @@ The bot runs daily at 3 AM UTC by default. To change this, edit the cron express
 
 ### Message Format
 
-Articles are sent with this format:
+Pins are sent with this format:
 
 ```
-📚 *Article Title*
+📌 *Pin Title*
 
-_Article excerpt..._
+_Pin description..._
 
-🌐 domain.com
-🔗 Read More
+📋 Board Name
+🔗 View Pin
+🖼️ Image
 
-📅 Shared on January 1, 2024
+📅 Pinned on January 1, 2024
 ```
 
 ## Development
@@ -128,7 +129,7 @@ _Article excerpt..._
 ```
 src/
 ├── index.ts          # Main worker entry point
-├── raindrop.ts       # Raindrop.io API client
+├── pinterest.ts      # Pinterest API client
 ├── telegram.ts       # Telegram Bot API client
 ├── types.ts          # TypeScript interfaces
 └── utils.ts          # Utility functions
@@ -140,21 +141,12 @@ src/
 - `pnpm run deploy` - Deploy to Cloudflare Workers
 - `pnpm run cf-typegen` - Generate TypeScript types from Wrangler config
 
-### Environment Variables
-
-| Variable                 | Type     | Description                        |
-| ------------------------ | -------- | ---------------------------------- |
-| `TELEGRAM_BOT_TOKEN`     | Secret   | Telegram bot token from @BotFather |
-| `RAINDROP_TOKEN`         | Secret   | Raindrop.io API token              |
-| `TELEGRAM_CHAT_ID`       | Variable | Your Telegram chat ID              |
-| `RAINDROP_COLLECTION_ID` | Variable | Target Raindrop.io collection ID   |
-
 ## Troubleshooting
 
 ### Common Issues
 
 1. **"Invalid Telegram bot token"** - Check your bot token is correct
-2. **"Collection not found"** - Verify your collection ID and API token
+2. **"Pinterest API request failed" or "No pins found"** - Your `PINTEREST_COOKIE` might be invalid or expired. Follow the steps to get a new one. Also, ensure your home feed has pins.
 3. **"Bot was blocked by user"** - Make sure you've started a conversation with your bot
 
 ### Logs

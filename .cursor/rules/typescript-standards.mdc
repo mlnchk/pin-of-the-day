@@ -38,22 +38,22 @@ alwaysApply: true
 
 ### Good Interface Design
 ```typescript
-export interface RaindropItem {
-  readonly _id: number;
+export interface PinterestItem {
+  readonly id: string;
   readonly title: string;
-  readonly excerpt: string;
+  readonly description: string;
   readonly link: string;
-  readonly domain: string;
-  readonly created: string;
+  readonly board_name: string;
+  readonly created_at: string;
+  readonly image_url: string;
 }
 ```
 
 ### Proper Function Typing
 ```typescript
-export async function getRandomArticle(
-  collectionId: string,
-  token: string
-): Promise<RaindropItem> {
+export async function getRandomPin(
+  cookie: string
+): Promise<PinterestItem> {
   // Implementation
 }
 ```
@@ -61,7 +61,7 @@ export async function getRandomArticle(
 ### Error Handling Pattern
 ```typescript
 try {
-  const article = await raindropClient.getRandomArticle(collectionId, token);
+  const pin = await pinterestClient.getRandomPin();
   await telegramClient.sendMessage(chatId, message, botToken);
 } catch (error) {
   const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -74,13 +74,13 @@ try {
 // ✅ Good - Uses auto-generated Env type
 export default {
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
-    const { RAINDROP_TOKEN, TELEGRAM_BOT_TOKEN } = env;
+    const { PINTEREST_COOKIE, TELEGRAM_BOT_TOKEN } = env;
   }
 }
 
 // ❌ Bad - Manual Env typing
 interface ManualEnv {
-  RAINDROP_TOKEN: string;
+  PINTEREST_COOKIE: string;
   // Don't do this!
 }
 ```

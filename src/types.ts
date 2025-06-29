@@ -1,16 +1,33 @@
-export interface RaindropItem {
-	readonly _id: number;
+export interface PinterestItem {
+	readonly id: string;
 	readonly title: string;
-	readonly excerpt: string;
+	readonly description: string;
 	readonly link: string;
-	readonly domain: string;
-	readonly created: string;
+	readonly board_name: string;
+	readonly created_at: string;
+	readonly image_url: string;
 }
 
-export interface RaindropResponse {
-	readonly result: boolean;
-	readonly items: RaindropItem[];
-	readonly count: number;
+export interface UndocumentedApiPin {
+	readonly id: string;
+	readonly title: string;
+	readonly description: string;
+	readonly link: string | null;
+	readonly board: {
+		readonly name: string;
+	};
+	readonly created_at: string;
+	readonly images: {
+		readonly orig: {
+			readonly url: string;
+		};
+	};
+}
+
+export interface UndocumentedApiResponse {
+	readonly resource_response: {
+		readonly data: readonly UndocumentedApiPin[];
+	};
 }
 
 export interface TelegramMessage {
