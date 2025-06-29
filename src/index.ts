@@ -35,7 +35,8 @@ export default {
 			const message = formatArticleMessage(pin);
 
 			// Send the pin to Telegram
-			await telegramClient.sendMessage(TELEGRAM_CHAT_ID, message);
+			// await telegramClient.sendMessage(TELEGRAM_CHAT_ID, message);
+			await telegramClient.sendPhoto(TELEGRAM_CHAT_ID, pin.image_url, message);
 
 			console.log('Daily pin sent successfully!');
 		} catch (error) {

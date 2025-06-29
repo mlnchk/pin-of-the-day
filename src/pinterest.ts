@@ -43,15 +43,15 @@ export function createPinterestClient(cookie: string): PinterestClient {
 				throw new Error(`No pins found. The user may have no pins or the API request failed.`);
 			}
 
-			// const randomPin = getRandomItem([...pins]);
-			const randomPin = pins[0];
+			const randomPin = getRandomItem([...pins]);
+			// const randomPin = pins[0];
 
 			return {
 				id: randomPin.id,
 				title: randomPin.title || 'No Title',
 				description: randomPin.description || '',
 				link: randomPin.link || `https://www.pinterest.com/pin/${randomPin.id}/`,
-				board_name: randomPin.board.name,
+				board_name: randomPin.board?.name || 'No Board',
 				created_at: randomPin.created_at,
 				image_url: randomPin.images.orig.url,
 			};

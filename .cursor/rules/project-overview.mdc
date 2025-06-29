@@ -3,23 +3,23 @@ description:
 globs:
 alwaysApply: true
 ---
-# Raindrop.io to Telegram Daily Article Bot
+# Pinterest to Telegram Daily Pin Bot
 
 ## PROJECT OVERVIEW
-You are building a serverless TypeScript application that runs daily on Cloudflare Workers. The bot fetches a random article from a Raindrop.io collection and sends it via Telegram.
+You are building a serverless TypeScript application that runs daily on Cloudflare Workers. The bot fetches a random pin from Pinterest using an undocumented API and sends it via Telegram.
 
 ## CORE REQUIREMENTS
 - **Platform**: Cloudflare Workers (free tier)
 - **Language**: TypeScript (strict mode)
 - **Scheduling**: Daily execution via Cloudflare Cron Triggers
-- **APIs**: Raindrop.io API, Telegram Bot API
+- **APIs**: Pinterest API (undocumented), Telegram Bot API
 - **Architecture**: Serverless, stateless, minimalistic
 
 ## PROJECT STRUCTURE
 ```
 src/
 ├── index.ts          # Main worker entry point with scheduled handler
-├── raindrop.ts       # Raindrop.io API client
+├── pinterest.ts      # Pinterest API client
 ├── telegram.ts       # Telegram Bot API client
 ├── types.ts          # TypeScript interfaces and types
 └── utils.ts          # Utility functions
@@ -28,31 +28,29 @@ package.json          # Dependencies and scripts
 ```
 
 ## ENVIRONMENT VARIABLES
-- `RAINDROP_TOKEN` (secret) - Raindrop.io API token
+- `PINTEREST_COOKIE` (secret) - Pinterest authentication cookie
 - `TELEGRAM_BOT_TOKEN` (secret) - Telegram bot token
-- `RAINDROP_COLLECTION_ID` (var) - Target collection ID
 - `TELEGRAM_CHAT_ID` (var) - Target chat ID
 
 ## IMPLEMENTATION GUIDELINES
 
-### 1. Main Entry Point ([index.ts](mdc:src/index.ts))
+### 1. Main Entry Point ([src/index.ts](mdc:src/index.ts))
 - Export default object with `scheduled` handler
 - Use `ScheduledEvent`, `Env`, `ExecutionContext` types
 - Implement error handling with try-catch
 - Add logging for debugging
 - Keep logic minimal - delegate to service classes
 
-### 2. Raindrop.io Client ([raindrop.ts](mdc:src/raindrop.ts))
-- Use factory pattern: `createRaindropClient(token: string)`
-- Token passed to factory, not individual methods
-- Implement `getRandomArticle(collectionId: string)` method
-- API endpoint: `https://api.raindrop.io/rest/v1/raindrops/{collectionId}`
-- Use Bearer token authentication
-- NO pagination handling (max 30 articles)
-- Select random article from results
-- Return structured article data
+### 2. Pinterest Client ([src/pinterest.ts](mdc:src/pinterest.ts))
+- Use factory pattern: `createPinterestClient(cookie: string)`
+- Cookie passed to factory, not individual methods
+- Implement `getRandomPin()` method
+- API endpoint: Undocumented `UserHomefeedResource` endpoint.
+- Use Cookie-based authentication.
+- Select random pin from results
+- Return structured pin data
 
-### 3. Telegram Client ([telegram.ts](mdc:src/telegram.ts))
+### 3. Telegram Client ([src/telegram.ts](mdc:src/telegram.ts))
 - Use factory pattern: `createTelegramClient(token: string)`
 - Token passed to factory, not individual methods
 - Implement `sendMessage(chatId: string, message: string)` method
@@ -60,17 +58,16 @@ package.json          # Dependencies and scripts
 - API endpoint: `https://api.telegram.org/bot{token}/sendMessage`
 - Use POST method with JSON payload
 - Format message with Markdown support
-- Include article title, excerpt, link, and domain
 
-### 4. Types ([types.ts](mdc:src/types.ts))
-- Define `RaindropItem` interface with: _id, title, excerpt, link, domain, created
-- Define `RaindropResponse` interface for API response
+### 4. Types ([src/types.ts](mdc:src/types.ts))
+- Define `PinterestItem` interface with: id, title, description, link, board_name, created_at, image_url
+- Define interfaces for undocumented Pinterest API responses
 - Define `TelegramMessage` interface for message payloads
 - Use auto-generated `Env` interface from `wrangler types`
 - Use readonly properties where appropriate
 
-### 5. Utilities ([utils.ts](mdc:src/utils.ts))
-- Message formatting utilities
+### 5. Utilities ([src/utils.ts](mdc:src/utils.ts))
+- Message formatting utilities for pins
 - Markdown escaping functions
 - Date formatting functions
 - Random selection utilities
@@ -78,80 +75,44 @@ package.json          # Dependencies and scripts
 
 ### 6. Error Handling
 - Wrap all async operations in try-catch
-- Send error notifications to Telegram if Raindrop API fails
+- Send error notifications to Telegram if Pinterest API fails
 - Provide meaningful error messages
 - Use console.error for logging
 - Don't crash on single API failure
 
-## CODING STANDARDS
-
-### TypeScript
-- Use strict mode
-- Prefer interfaces over types
-- Use async/await over Promises
-- Add proper return types to all functions
-- Use optional chaining and nullish coalescing
-- No `any` types - use proper typing
-- Use auto-generated types from `wrangler types`
-
-### HTTP Requests
-- Use Cloudflare's built-in `fetch()` only
-- No external HTTP libraries
-- Set proper headers (Authorization, Content-Type)
-- Handle HTTP error status codes
-- Use JSON for request/response bodies
-
-### Message Formatting
-- Use Telegram Markdown formatting
-- Include emojis for better UX
-- Format: `📚 *Article Title*\n\n_Excerpt..._\n\n🔗 [Read More](mdc:link)`
-- Escape special Markdown characters if needed
-- Keep messages concise but informative
-
-### Performance
-- Minimize API calls
-- Use efficient random selection
-- Avoid unnecessary data processing
-- Keep execution time under 10 seconds
-- No persistent state or databases
-
 ## API DETAILS
 
-### Raindrop.io API
-- Authentication: `Authorization: Bearer {token}`
-- Get collection items: `GET /rest/v1/raindrops/{collectionId}`
-- Response includes items array with article data
-- Handle rate limiting (429 status)
+### Pinterest API (Undocumented)
+- Authentication: `Cookie` header with session cookie
+- Get pins from home feed: `GET /_ngjs/resource/UserHomefeedResource/get/`
+- Response includes resource_response with pin data array
 
 ### Telegram Bot API
 - Send message: `POST /bot{token}/sendMessage`
 - Payload: `{"chat_id": "...", "text": "...", "parse_mode": "Markdown"}`
-- Handle message too long error (split if needed)
 
 ### Message Format Template
 ```
-📚 *{title}*
+📌 *{title}*
 
-_{excerpt}_
+🔗 [View Pin](mdc:{link})
+🖼️ [Image](mdc:{image_url})
 
-🌐 {domain}
-🔗 {link_to_article}
-
-📅 Shared on {date}
+📅 Pinned on {date}
 ```
 
 ### Error Message Template
 ```
-🚨 *Daily Article Bot Error*
+🚨 *Daily Pin Bot Error*
 
-❌ Failed to fetch article from Raindrop.io
+❌ Failed to fetch pin from Pinterest
 
 *Error Details:*
 {error_description}
 
 *Time:* {timestamp}
 
-Please check your Raindrop.io collection and API token.
+Please check your Pinterest cookie.
 ```
 
 ## DO NOT INCLUDE

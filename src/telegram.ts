@@ -1,8 +1,9 @@
-import type { TelegramMessage } from './types';
+import type { TelegramMessage, TelegramPhotoMessage } from './types';
 import { formatErrorMessage } from './utils';
 
 interface TelegramClient {
 	sendMessage(chatId: string, message: string): Promise<void>;
+	sendPhoto(chatId: string, photoUrl: string, caption: string): Promise<void>;
 	sendErrorMessage(chatId: string, error: string): Promise<void>;
 }
 
@@ -14,6 +15,7 @@ interface TelegramClient {
 export function createTelegramClient(token: string): TelegramClient {
 	const BASE_URL = 'https://api.telegram.org';
 	const MAX_MESSAGE_LENGTH = 4096;
+	const MAX_CAPTION_LENGTH = 1024;
 
 	return {
 		/**
@@ -74,6 +76,69 @@ export function createTelegramClient(token: string): TelegramClient {
 				}
 
 				throw new Error('Unknown error occurred while sending Telegram message');
+			}
+		},
+
+		/**
+		 * Sends a photo with a caption to a Telegram chat
+		 * @param chatId - The Telegram chat ID
+		 * @param photoUrl - The URL of the photo to send
+		 * @param caption - The caption for the photo (supports Markdown)
+		 * @throws Error if the message fails to send
+		 */
+		async sendPhoto(chatId: string, photoUrl: string, caption: string): Promise<void> {
+			const url = `${BASE_URL}/bot${token}/sendPhoto`;
+
+			// Truncate caption if it's too long
+			const truncatedCaption = caption.length > MAX_CAPTION_LENGTH ? caption.substring(0, MAX_CAPTION_LENGTH - 3) + '...' : caption;
+
+			const payload: TelegramPhotoMessage = {
+				chat_id: chatId,
+				photo: photoUrl,
+				caption: truncatedCaption,
+				parse_mode: 'Markdown',
+			};
+
+			try {
+				const response = await fetch(url, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify(payload),
+				});
+
+				if (!response.ok) {
+					const errorData = (await response.json().catch(() => ({}))) as { description?: string };
+
+					if (response.status === 401) {
+						throw new Error('Invalid Telegram bot token');
+					}
+					if (response.status === 400) {
+						throw new Error(`Bad request to Telegram API: ${errorData.description || 'Unknown error'}`);
+					}
+					if (response.status === 403) {
+						throw new Error('Bot was blocked by the user or chat not found');
+					}
+
+					throw new Error(`Telegram API error: ${response.status} ${response.statusText}`);
+				}
+
+				const result = (await response.json()) as { ok: boolean; description?: string };
+
+				if (!result.ok) {
+					throw new Error(`Telegram API returned error: ${result.description || 'Unknown error'}`);
+				}
+
+				console.log(`Photo sent successfully to chat ${chatId}`);
+			} catch (error) {
+				console.error('Telegram API Error (sendPhoto):', error);
+
+				if (error instanceof Error) {
+					throw error;
+				}
+
+				throw new Error('Unknown error occurred while sending Telegram photo');
 			}
 		},
 

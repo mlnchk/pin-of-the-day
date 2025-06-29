@@ -39,7 +39,8 @@ export function formatArticleMessage(pin: PinterestItem): string {
 	// const boardName = escapeMarkdown(pin.board_name);
 	// const formattedDate = formatDate(pin.created_at);
 
-	return `🖼️ [Image](${pin.image_url})\n🔗 [View Pin](${pin.link})`;
+	// return `🖼️ [Image](${pin.image_url})\n🔗 [View Pin](${pin.link})`;
+	return `🔗 [View Pin](${pin.link})`;
 }
 
 /**

@@ -35,3 +35,10 @@ export interface TelegramMessage {
 	readonly text: string;
 	readonly parse_mode: 'Markdown';
 }
+
+export interface TelegramPhotoMessage {
+	readonly chat_id: string;
+	readonly photo: string;
+	readonly caption: string;
+	readonly parse_mode: 'Markdown';
+}
