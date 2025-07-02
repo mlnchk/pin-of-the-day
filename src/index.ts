@@ -7,7 +7,7 @@
 
 import { createPinterestClient } from './pinterest';
 import { createTelegramClient } from './telegram';
-import { formatArticleMessage } from './utils';
+import { formatArticleMessage, formatMultiplePinsMessage } from './utils';
 
 export default {
 	async fetch(request: Request, env: Env): Promise<Response> {
@@ -27,18 +27,19 @@ export default {
 		const telegramClient = createTelegramClient(TELEGRAM_BOT_TOKEN);
 
 		try {
-			// Fetch a random pin from Pinterest
-			console.log(`Fetching random pin from homefeed`);
-			const pin = await pinterestClient.getRandomPin();
+			// Fetch 3 random pins from Pinterest
+			console.log(`Fetching 3 random pins from homefeed`);
+			const pins = await pinterestClient.getRandomPins(3);
 
-			// Format the pin message
-			const message = formatArticleMessage(pin);
+			// Send pins as a media group with individual captions
+			const mediaGroupPhotos = pins.map((pin) => ({
+				url: pin.image_url,
+				caption: formatMultiplePinsMessage(pins),
+			}));
 
-			// Send the pin to Telegram
-			// await telegramClient.sendMessage(TELEGRAM_CHAT_ID, message);
-			await telegramClient.sendPhoto(TELEGRAM_CHAT_ID, pin.image_url, message);
+			await telegramClient.sendMediaGroup(TELEGRAM_CHAT_ID, mediaGroupPhotos);
 
-			console.log('Daily pin sent successfully!');
+			console.log('Daily pins sent successfully!');
 		} catch (error) {
 			const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
 			console.error('Daily Pin Bot Error:', errorMessage);

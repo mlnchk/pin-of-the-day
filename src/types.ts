@@ -17,7 +17,7 @@ export interface UndocumentedApiPin {
 		readonly name: string;
 	};
 	readonly created_at: string;
-	readonly images: {
+	readonly images?: {
 		readonly orig: {
 			readonly url: string;
 		};
@@ -41,4 +41,16 @@ export interface TelegramPhotoMessage {
 	readonly photo: string;
 	readonly caption: string;
 	readonly parse_mode: 'Markdown';
+}
+
+export interface InputMediaPhoto {
+	readonly type: 'photo';
+	readonly media: string;
+	readonly caption?: string;
+	readonly parse_mode?: 'Markdown';
+}
+
+export interface TelegramMediaGroup {
+	readonly chat_id: string;
+	readonly media: readonly InputMediaPhoto[];
 }

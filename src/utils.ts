@@ -44,6 +44,26 @@ export function formatArticleMessage(pin: PinterestItem): string {
 }
 
 /**
+ * Formats multiple Pinterest pins into a single Telegram message
+ */
+export function formatMultiplePinsMessage(pins: PinterestItem[]): string {
+	if (pins.length === 0) {
+		return 'No pins available';
+	}
+
+	const formattedPins = pins
+		.map((pin, index) => {
+			const number = index + 1;
+			const boardName = escapeMarkdown(pin.board_name);
+
+			return `${number}. 📋 ${boardName} • [📍 Pin →](${pin.link})`;
+		})
+		.join('\n');
+
+	return formattedPins;
+}
+
+/**
  * Formats an error message for Telegram notification
  */
 export function formatErrorMessage(error: string): string {

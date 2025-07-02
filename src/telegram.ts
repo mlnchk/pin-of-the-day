@@ -1,9 +1,10 @@
-import type { TelegramMessage, TelegramPhotoMessage } from './types';
+import type { TelegramMessage, TelegramPhotoMessage, TelegramMediaGroup, InputMediaPhoto } from './types';
 import { formatErrorMessage } from './utils';
 
 interface TelegramClient {
 	sendMessage(chatId: string, message: string): Promise<void>;
 	sendPhoto(chatId: string, photoUrl: string, caption: string): Promise<void>;
+	sendMediaGroup(chatId: string, photos: Array<{ url: string; caption?: string }>): Promise<void>;
 	sendErrorMessage(chatId: string, error: string): Promise<void>;
 }
 
@@ -158,6 +159,82 @@ export function createTelegramClient(token: string): TelegramClient {
 				console.error('Original error that we tried to report:', error);
 
 				// Don't throw here - we don't want to create an infinite loop of errors
+			}
+		},
+
+		/**
+		 * Sends multiple photos as a media group to a Telegram chat
+		 * @param chatId - The Telegram chat ID
+		 * @param photos - Array of photo objects with url and optional caption
+		 * @throws Error if the message fails to send
+		 */
+		async sendMediaGroup(chatId: string, photos: Array<{ url: string; caption?: string }>): Promise<void> {
+			if (photos.length === 0) {
+				throw new Error('Cannot send empty media group');
+			}
+
+			if (photos.length > 10) {
+				throw new Error('Media group cannot contain more than 10 items');
+			}
+
+			const url = `${BASE_URL}/bot${token}/sendMediaGroup`;
+
+			const media: InputMediaPhoto[] = photos.map((photo, index) => ({
+				type: 'photo' as const,
+				media: photo.url,
+				caption: photo.caption
+					? photo.caption.length > MAX_CAPTION_LENGTH
+						? photo.caption.substring(0, MAX_CAPTION_LENGTH - 3) + '...'
+						: photo.caption
+					: undefined,
+				parse_mode: photo.caption ? ('Markdown' as const) : undefined,
+			}));
+
+			const payload: TelegramMediaGroup = {
+				chat_id: chatId,
+				media,
+			};
+
+			try {
+				const response = await fetch(url, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify(payload),
+				});
+
+				if (!response.ok) {
+					const errorData = (await response.json().catch(() => ({}))) as { description?: string };
+
+					if (response.status === 401) {
+						throw new Error('Invalid Telegram bot token');
+					}
+					if (response.status === 400) {
+						throw new Error(`Bad request to Telegram API: ${errorData.description || 'Unknown error'}`);
+					}
+					if (response.status === 403) {
+						throw new Error('Bot was blocked by the user or chat not found');
+					}
+
+					throw new Error(`Telegram API error: ${response.status} ${response.statusText}`);
+				}
+
+				const result = (await response.json()) as { ok: boolean; description?: string };
+
+				if (!result.ok) {
+					throw new Error(`Telegram API returned error: ${result.description || 'Unknown error'}`);
+				}
+
+				console.log(`Media group with ${photos.length} photos sent successfully to chat ${chatId}`);
+			} catch (error) {
+				console.error('Telegram API Error (sendMediaGroup):', error);
+
+				if (error instanceof Error) {
+					throw error;
+				}
+
+				throw new Error('Unknown error occurred while sending Telegram media group');
 			}
 		},
 	};
