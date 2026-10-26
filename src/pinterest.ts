@@ -42,6 +42,25 @@ export function createPinterestClient(cookie: string): PinterestClient {
 			throw new Error(`No pins found. The user may have no pins or the API request failed.`);
 		}
 
+		// TODO: temporary debug logging to find out how promoted pins look in the homefeed response
+		console.log(
+			'Homefeed items:',
+			JSON.stringify(
+				pins.map((pin) => {
+					const raw = pin as unknown as Record<string, unknown>;
+					return {
+						id: raw.id,
+						type: raw.type,
+						is_promoted: raw.is_promoted,
+						has_promoter: Boolean(raw.promoter),
+						link: raw.link,
+						has_images: Boolean(raw.images),
+						ad_like_keys: Object.keys(raw).filter((key) => /promot|^ad_|_ad$|advertis|campaign|sponsor/i.test(key)),
+					};
+				}),
+			),
+		);
+
 		return pins
 			.filter((pin) => pin.images)
 			.map((pin) => ({
