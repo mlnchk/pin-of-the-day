@@ -10,6 +10,11 @@ export interface PinterestItem {
 
 export interface UndocumentedApiPin {
 	readonly id: string;
+	readonly type?: string;
+	readonly is_promoted?: boolean;
+	readonly promoter?: unknown;
+	readonly ad_match_reason?: unknown;
+	readonly campaign_id?: string | null;
 	readonly title: string;
 	readonly description: string;
 	readonly link: string | null;

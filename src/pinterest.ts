@@ -1,5 +1,15 @@
-import type { PinterestItem, UndocumentedApiResponse } from './types';
+import type { PinterestItem, UndocumentedApiPin, UndocumentedApiResponse } from './types';
 import { getRandomItem } from './utils';
+
+/**
+ * Checks that a homefeed item is a regular pin with an image, not an ad or another feed module.
+ * Several ad markers are checked since the API is undocumented and field names may change.
+ */
+function isOrganicPin(pin: UndocumentedApiPin): boolean {
+	if (pin.type && pin.type !== 'pin') return false;
+	if (pin.is_promoted || pin.promoter || pin.ad_match_reason || pin.campaign_id) return false;
+	return Boolean(pin.images);
+}
 
 interface PinterestClient {
 	getRandomPin(): Promise<PinterestItem>;
@@ -62,7 +72,7 @@ export function createPinterestClient(cookie: string): PinterestClient {
 		);
 
 		return pins
-			.filter((pin) => pin.images)
+			.filter(isOrganicPin)
 			.map((pin) => ({
 				id: pin.id,
 				title: pin.title || 'No Title',
